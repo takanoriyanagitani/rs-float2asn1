@@ -1,0 +1,5 @@
+Double DEFINITIONS ::= BEGIN
+
+	DoubleNumber ::= REAL
+
+END
