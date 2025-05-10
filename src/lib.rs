@@ -27,8 +27,17 @@ pub extern "C" fn double2size(d: f64) -> i32 {
 
 pub fn _double2der(d: f64, mut v: &mut [u8]) -> Result<usize, &'static str> {
     let r: Real = d.into();
-	let r = r.with_enc_base(2);
-	let r = Real::binary(1.01325e6, 2, 0);
+    r.write_der(&mut v)
+        .map_err(|_| "unable to serialize the real number")
+}
+
+pub fn _bin2der(
+    mantissa: f64,
+    base: u32,
+    exponent: i32,
+    mut v: &mut [u8],
+) -> Result<usize, &'static str> {
+    let r: Real = Real::binary(mantissa, base, exponent);
     r.write_der(&mut v)
         .map_err(|_| "unable to serialize the real number")
 }
@@ -53,8 +62,23 @@ pub fn double2der_ptr(d: f64) -> Result<usize, &'static str> {
     _double2der(d, ms)
 }
 
+pub fn bin2der_ptr(mantissa: f64, base: u32, exponent: i32) -> Result<usize, &'static str> {
+    let mut mg = DER_BYTES.try_write().map_err(|_| "unable to write lock")?;
+    let ma: &mut [u8; 32] = &mut mg;
+    let ms: &mut [u8] = ma;
+    _bin2der(mantissa, base, exponent, ms)
+}
+
 #[allow(unsafe_code)]
 #[unsafe(no_mangle)]
 pub extern "C" fn double2der(d: f64) -> i32 {
     double2der_ptr(d).map(|u| u as i32).unwrap_or(-1)
+}
+
+#[allow(unsafe_code)]
+#[unsafe(no_mangle)]
+pub extern "C" fn bin2der(mantissa: f64, base: u32, exponent: i32) -> i32 {
+    bin2der_ptr(mantissa, base, exponent)
+        .map(|u| u as i32)
+        .unwrap_or(-1)
 }
